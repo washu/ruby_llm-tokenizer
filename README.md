@@ -1,8 +1,11 @@
 # ruby_llm-tokenizer
 
+[![CI](https://github.com/washu/ruby_llm-tokenizer/actions/workflows/ci.yml/badge.svg)](https://github.com/washu/ruby_llm-tokenizer/actions/workflows/ci.yml)
+[![Gem Version](https://badge.fury.io/rb/ruby_llm-tokenizer.svg)](https://rubygems.org/gems/ruby_llm-tokenizer)
+
 Local, model-aware token counting for [ruby_llm](https://github.com/crmne/ruby_llm).
 
-A pure-Ruby facade over Hugging Face [`tokenizers`](https://github.com/ankane/tokenizers-ruby) and OpenAI [`tiktoken_ruby`](https://github.com/IAPark/tiktoken_ruby) that maps model identifiers (`gpt-4o`, `llama-3`, `mistral`, ...) to the correct tokenizer and exposes a small API for counting, analyzing, and truncating text against a model's context window — without making a network call.
+A pure-Ruby facade over Hugging Face [`tokenizers`](https://github.com/ankane/tokenizers-ruby) and OpenAI [`tiktoken_ruby`](https://github.com/IAPark/tiktoken_ruby) that maps model identifiers (`gpt-4o`, `llama-3`, `mistral`, ...) to the correct tokenizer and exposes a small API for counting, analyzing, and truncating text against a model's context window — without making an LLM API call.
 
 No Rust toolchain required: cross-compiled binaries are inherited from the upstream gems.
 
@@ -97,7 +100,7 @@ User registrations take precedence over built-ins.
 RubyLLM::Tokenizer.configure do |c|
   c.cache_dir        = Pathname("/tmp/ruby_llm_tokenizer")  # default: ~/.cache/ruby_llm/tokenizer
   c.offline          = false                                # if true, never hits the HF Hub
-  c.hf_token         = ENV["HF_TOKEN"]                      # for gated repos
+  c.hf_token         = ENV["HF_TOKEN"]                      # also reads HUGGING_FACE_HUB_TOKEN
   c.approximate_warn = true                                 # warn on first approximate use
 end
 ```
@@ -109,11 +112,10 @@ end
 | `RubyLLM::Tokenizer::UnknownModelError`        | No registered pattern matches the given model id            |
 | `RubyLLM::Tokenizer::BackendError`             | Underlying tokenizer engine failed to load or encode        |
 | `RubyLLM::Tokenizer::CacheError`               | `offline: true` and the local tokenizer.json is missing     |
-| `RubyLLM::Tokenizer::ContextExceededError`     | Reserved for guardrail middleware (see roadmap)             |
+| `RubyLLM::Tokenizer::ContextExceededError`     | Raised when a token count exceeds a defined limit (reserved for future use)  |
 
 ## Roadmap
 
-- ruby_llm middleware integration for pre-flight context guardrails
 - CLI (`ruby_llm-tokenizer count --model gpt-4o file.txt`)
 - Streaming `truncate` for very large inputs
 

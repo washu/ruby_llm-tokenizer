@@ -67,7 +67,9 @@ GEM
     simplecov-html (0.13.2)
     simplecov_json_formatter (0.1.4)
     tiktoken_ruby (0.0.16-arm64-darwin)
+    tiktoken_ruby (0.0.16-x86_64-linux)
     tokenizers (0.7.0-arm64-darwin)
+    tokenizers (0.7.0-x86_64-linux)
     unicode-display_width (3.2.0)
       unicode-emoji (~> 4.1)
     unicode-emoji (4.2.0)
@@ -79,6 +81,7 @@ GEM
 PLATFORMS
   arm64-darwin-22
   arm64-darwin-23
+  x86_64-linux
 
 DEPENDENCIES
   rake (~> 13.0)

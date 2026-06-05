@@ -13,6 +13,7 @@ module RubyLLM
         def initialize(encoding: "o200k_base")
           super
           @warned = false
+          @warn_mutex = Mutex.new
         end
 
         def encode(text)
@@ -30,12 +31,18 @@ module RubyLLM
           return if @warned
           return unless RubyLLM::Tokenizer.configuration.approximate_warn
 
-          Kernel.warn(
-            "[ruby_llm-tokenizer] Using approximate tokenizer (#{encoding_name}). " \
+          @warn_mutex.synchronize do
+            return if @warned
+
+            Kernel.warn(warning_message)
+            @warned = true
+          end
+        end
+
+        def warning_message
+          "[ruby_llm-tokenizer] Using approximate tokenizer (#{encoding_name}). " \
             "Counts may differ from the model's true tokenizer by ~5-15%. " \
             "Silence with: RubyLLM::Tokenizer.configure { |c| c.approximate_warn = false }"
-          )
-          @warned = true
         end
       end
     end

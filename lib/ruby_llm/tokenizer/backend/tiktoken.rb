@@ -14,8 +14,6 @@ module RubyLLM
           @encoding_name = encoding.to_s
           @encoding = ::Tiktoken.get_encoding(@encoding_name)
           raise BackendError, "Unknown tiktoken encoding: #{encoding.inspect}" if @encoding.nil?
-        rescue BackendError
-          raise
         rescue StandardError => e
           raise BackendError, "Failed to load tiktoken encoding #{encoding.inspect}: #{e.message}"
         end

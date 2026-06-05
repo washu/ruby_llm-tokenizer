@@ -42,6 +42,7 @@ RSpec.describe RubyLLM::Tokenizer::Registry do
     it "parses /regex/ syntax with flags" do
       r = described_class.parse_match("/^foo/i")
       expect(r).to be_a(Regexp)
+      expect(r).to be_an_instance_of(Regexp)
       expect(r.match?("FOO-bar")).to be(true)
     end
 
@@ -50,8 +51,31 @@ RSpec.describe RubyLLM::Tokenizer::Registry do
     end
 
     it "supports multiline and extended flags" do
-      expect(described_class.parse_match("/a.b/m").options & Regexp::MULTILINE).not_to eq(0)
-      expect(described_class.parse_match("/a b/x").options & Regexp::EXTENDED).not_to eq(0)
+      multiline = described_class.parse_match("/a.b/m")
+      extended = described_class.parse_match("/a b/x")
+
+      expect(multiline).to be_an_instance_of(Regexp)
+      expect(extended).to be_an_instance_of(Regexp)
+      expect(multiline.options & Regexp::MULTILINE).not_to eq(0)
+      expect(extended.options & Regexp::EXTENDED).not_to eq(0)
+    end
+  end
+
+  describe "default registry loading" do
+    it "raises a helpful error for malformed matcher values" do
+      bad_defaults = [{ "match" => 123, "backend" => "tiktoken", "encoding" => "cl100k_base" }]
+      allow(YAML).to receive(:load_file).and_return(bad_defaults)
+
+      expect { registry.load_defaults_from("ignored.yml") }
+        .to raise_error(RubyLLM::Tokenizer::BackendError, /Invalid model matcher/)
+    end
+
+    it "raises a helpful error for malformed backend values" do
+      bad_defaults = [{ "match" => "demo-model", "backend" => 123, "encoding" => "cl100k_base" }]
+      allow(YAML).to receive(:load_file).and_return(bad_defaults)
+
+      expect { registry.load_defaults_from("ignored.yml") }
+        .to raise_error(RubyLLM::Tokenizer::BackendError, /Invalid backend identifier/)
     end
   end
 end

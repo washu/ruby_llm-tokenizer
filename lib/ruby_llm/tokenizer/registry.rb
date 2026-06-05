@@ -19,7 +19,7 @@ module RubyLLM
         end
       end
 
-      DEFAULTS_PATH = File.expand_path("models.yml", __dir__)
+      DEFAULTS_PATH = File.join(File.dirname(__FILE__), "models.yml")
 
       def self.load_default
         new.tap { |r| r.load_defaults_from(DEFAULTS_PATH) }
@@ -38,10 +38,11 @@ module RubyLLM
       end
 
       def resolve(model)
-        @cache[model.to_s] ||= begin
-          entry = @entries.find { |e| e.matches?(model) }
-          entry && build_backend(entry, model.to_s)
-        end
+        key = model.to_s
+        return @cache[key] if @cache.key?(key)
+
+        entry = @entries.find { |e| e.matches?(model) }
+        @cache[key] = entry && build_backend(entry, key)
       end
 
       def entries
@@ -61,15 +62,6 @@ module RubyLLM
         self
       end
 
-      def build_entry(raw)
-        options = raw.except("match", "backend").transform_keys(&:to_sym)
-        Entry.new(
-          match: self.class.parse_match(raw["match"]),
-          backend: raw["backend"].to_sym,
-          options: options
-        )
-      end
-
       def self.parse_match(value)
         if value.is_a?(String) && (md = value.match(%r{\A/(.*)/([imx]*)\z}))
           flags = 0
@@ -83,6 +75,32 @@ module RubyLLM
       end
 
       private
+
+      def build_entry(raw)
+        Entry.new(
+          match: parse_entry_match(raw),
+          backend: parse_entry_backend(raw),
+          options: entry_options(raw)
+        )
+      end
+
+      def entry_options(raw)
+        raw.except("match", "backend").transform_keys(&:to_sym)
+      end
+
+      def parse_entry_match(raw)
+        match = self.class.parse_match(raw.fetch("match"))
+        return match if match.is_a?(String) || match.is_a?(Regexp)
+
+        raise BackendError, "Invalid model matcher: #{match.inspect}"
+      end
+
+      def parse_entry_backend(raw)
+        backend = raw.fetch("backend")
+        return backend.to_sym if backend.is_a?(String) || backend.is_a?(Symbol)
+
+        raise BackendError, "Invalid backend identifier: #{backend.inspect}"
+      end
 
       def build_backend(entry, model)
         case entry.backend
