@@ -21,8 +21,8 @@ module RubyLLM
         backend_for(model).truncate(text, max_tokens: max_tokens, overflow: overflow)
       end
 
-      def register(match:, backend:, **options)
-        registry.register(match: match, backend: backend, **options)
+      def register(match:, backend:, **)
+        registry.register(match: match, backend: backend, **)
       end
 
       # Opt-in: route any "claude*" model to an approximation backend.
