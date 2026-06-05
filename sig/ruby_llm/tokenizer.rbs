@@ -2,6 +2,9 @@ module RubyLLM
   module Tokenizer
     VERSION: String
 
+    class Registry
+    end
+
     class Error < StandardError
     end
 
@@ -21,7 +24,7 @@ module RubyLLM
     end
 
     class Configuration
-      attr_accessor cache_dir: Pathname
+      attr_accessor cache_dir: untyped
       attr_accessor offline: bool
       attr_accessor hf_token: String?
       attr_accessor approximate_warn: bool
@@ -37,7 +40,7 @@ module RubyLLM
 
     def self.count: (String text, model: String) -> Integer
     def self.analyze: (String text, model: String) -> Analysis
-    def self.truncate: (String text, max_tokens: Integer, model: String, ?overflow: Symbol) -> String
+    def self.truncate: ((String | ::Enumerable[untyped]) text, max_tokens: Integer, model: String, ?overflow: Symbol) -> String
     def self.register: (match: Regexp | String, backend: Symbol, **untyped) -> Registry
     def self.enable_claude_approximation!: (?encoding: String) -> Registry
     def self.configure: () { (Configuration) -> void } -> void

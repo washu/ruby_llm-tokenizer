@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "fileutils"
 require "tokenizers"
 require_relative "../backend"
 
@@ -54,11 +55,19 @@ module RubyLLM
         def load_from_hub(config)
           args = { auth_token: config.hf_token }.compact
           args[:revision] = @revision if @revision
-          ::Tokenizers.from_pretrained(@repo, **args)
+          tokenizer = ::Tokenizers.from_pretrained(@repo, **args)
+          persist_to_cache(tokenizer, config)
+          tokenizer
         end
 
         def local_tokenizer_path(config)
           config.cache_dir.join(@repo.tr("/", "-"), "tokenizer.json")
+        end
+
+        def persist_to_cache(tokenizer, config)
+          path = local_tokenizer_path(config)
+          FileUtils.mkdir_p(path.dirname)
+          tokenizer.save(path.to_s)
         end
       end
     end

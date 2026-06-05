@@ -1,7 +1,10 @@
 # frozen_string_literal: true
 
+require "tmpdir"
+
 RSpec.describe RubyLLM::Tokenizer::Backend::HuggingFace do
   let(:fixtures_root) { Pathname.new(File.expand_path("../../../fixtures", __dir__)) }
+  let(:fake_tokenizer) { Tokenizers.from_file(fixtures_root.join("tiny-tokenizer", "tokenizer.json").to_s) }
 
   describe "offline mode (from_file)" do
     before do
@@ -48,8 +51,6 @@ RSpec.describe RubyLLM::Tokenizer::Backend::HuggingFace do
   end
 
   describe "online mode (from_pretrained)" do
-    let(:fake_tokenizer) { Tokenizers.from_file(fixtures_root.join("tiny-tokenizer", "tokenizer.json").to_s) }
-
     before do
       RubyLLM::Tokenizer.configure do |c|
         c.offline = false
@@ -87,6 +88,44 @@ RSpec.describe RubyLLM::Tokenizer::Backend::HuggingFace do
 
       expect { RubyLLM::Tokenizer.count("hi", model: "online-model") }
         .to raise_error(RubyLLM::Tokenizer::BackendError, %r{fake-org/fake-repo.*boom})
+    end
+
+    it "persists the downloaded tokenizer into cache_dir so offline mode can reuse it" do
+      Dir.mktmpdir("ruby-llm-tokenizer-cache") do |dir|
+        cache_dir = Pathname(dir)
+
+        RubyLLM::Tokenizer.configure do |c|
+          c.offline = false
+          c.cache_dir = cache_dir
+          c.hf_token = nil
+        end
+
+        expect(Tokenizers).to receive(:from_pretrained)
+          .with("fake-org/fake-repo", revision: "v1.2.3")
+          .and_return(fake_tokenizer)
+
+        online_result = RubyLLM::Tokenizer.analyze("hello", model: "online-model")
+        expect(online_result.ids).to eq([1])
+
+        cached_path = cache_dir.join("fake-org-fake-repo", "tokenizer.json")
+        expect(cached_path).to exist
+
+        RubyLLM::Tokenizer.reset!
+        RubyLLM::Tokenizer.configure do |c|
+          c.offline = true
+          c.cache_dir = cache_dir
+        end
+        RubyLLM::Tokenizer.register(
+          match: "online-model",
+          backend: :hugging_face,
+          repo: "fake-org/fake-repo",
+          revision: "v1.2.3"
+        )
+
+        offline_result = RubyLLM::Tokenizer.analyze("hello", model: "online-model")
+        expect(offline_result.ids).to eq([1])
+        expect(offline_result.model).to eq("hugging_face:fake-org/fake-repo@v1.2.3")
+      end
     end
   end
 end

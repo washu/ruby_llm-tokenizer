@@ -4,9 +4,7 @@
 [![Gem Version](https://badge.fury.io/rb/ruby_llm-tokenizer.svg)](https://rubygems.org/gems/ruby_llm-tokenizer)
 
 Local, model-aware token counting for [ruby_llm](https://github.com/crmne/ruby_llm).
-
 A pure-Ruby facade over Hugging Face [`tokenizers`](https://github.com/ankane/tokenizers-ruby) and OpenAI [`tiktoken_ruby`](https://github.com/IAPark/tiktoken_ruby) that maps model identifiers (`gpt-4o`, `llama-3`, `mistral`, ...) to the correct tokenizer and exposes a small API for counting, analyzing, and truncating text against a model's context window — without making an LLM API call.
-
 No Rust toolchain required: cross-compiled binaries are inherited from the upstream gems.
 
 ## Installation
@@ -46,7 +44,21 @@ RubyLLM::Tokenizer.truncate(
   model: "gpt-4o",
   overflow: :truncate_left  # drop oldest content; default is :truncate_right
 )
+
+# Stream/Enumerable inputs work too
+RubyLLM::Tokenizer.truncate(
+  File.foreach("huge_log.txt"),
+  max_tokens: 30_000,
+  model: "gpt-4o",
+  overflow: :truncate_left
+)
 ```
+
+For stream-like inputs, `truncate` accepts any `Enumerable` of chunks (for example
+`File.foreach(...)`) and incrementally applies the same exact token-limit semantics as
+string input. This avoids requiring callers to materialize the original source text up
+front and avoids some duplicate tokenization work during truncation, though the
+implementation may still retain the kept portion in memory.
 
 ## Supported model families (built-in)
 
@@ -60,7 +72,7 @@ RubyLLM::Tokenizer.truncate(
 
 OpenAI model resolution is delegated to `tiktoken_ruby` — new OpenAI models become available on `bundle update tiktoken_ruby` with no change to this gem. Override a specific model at runtime with `RubyLLM::Tokenizer.register(...)`.
 
-OpenAI encodings are bundled with `tiktoken_ruby` (no network needed). Hugging Face `tokenizer.json` files are downloaded lazily on first use and cached. Some HF repos (Llama 3, recent Mistral) are gated and require an HF token — see [Configuration](#configuration).
+OpenAI encodings are bundled with `tiktoken_ruby` (no network needed). Hugging Face `tokenizer.json` files are downloaded lazily on first use, then persisted under `cache_dir` for later offline reuse. Some HF repos (Llama 3, recent Mistral) are gated and require an HF token — see [Configuration](#configuration).
 
 ## Claude / Anthropic
 
@@ -98,7 +110,7 @@ User registrations take precedence over built-ins.
 
 ```ruby
 RubyLLM::Tokenizer.configure do |c|
-  c.cache_dir        = Pathname("/tmp/ruby_llm_tokenizer")  # default: ~/.cache/ruby_llm/tokenizer
+  c.cache_dir        = Pathname("/tmp/ruby_llm_tokenizer")  # default: ~/.cache/ruby_llm/tokenizer; stores downloaded HF tokenizers
   c.offline          = false                                # if true, never hits the HF Hub
   c.hf_token         = ENV["HF_TOKEN"]                      # also reads HUGGING_FACE_HUB_TOKEN
   c.approximate_warn = true                                 # warn on first approximate use
@@ -114,10 +126,6 @@ end
 | `RubyLLM::Tokenizer::CacheError`               | `offline: true` and the local tokenizer.json is missing     |
 | `RubyLLM::Tokenizer::ContextExceededError`     | Raised when a token count exceeds a defined limit (reserved for future use)  |
 
-## Roadmap
-
-- CLI (`ruby_llm-tokenizer count --model gpt-4o file.txt`)
-- Streaming `truncate` for very large inputs
 
 ## Development
 
@@ -126,6 +134,18 @@ bin/setup
 bundle exec rspec
 bin/console
 ```
+
+## Releasing
+
+```bash
+SKIP_PUSH=1 ./build_release.sh
+./build_release.sh
+GEM_HOST_OTP=123456 ./build_release.sh
+```
+
+- `SKIP_PUSH=1` builds the gem and verifies the release artifact without publishing.
+- Running `./build_release.sh` normally builds and pushes, letting `gem push` prompt for MFA.
+- `GEM_HOST_OTP=...` passes an explicit RubyGems OTP when you want a non-interactive push.
 
 ## Contributing
 

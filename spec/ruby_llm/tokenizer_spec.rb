@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "stringio"
+
 RSpec.describe RubyLLM::Tokenizer do
   it "has a version number" do
     expect(RubyLLM::Tokenizer::VERSION).not_to be_nil
@@ -96,6 +98,60 @@ RSpec.describe RubyLLM::Tokenizer do
     it "truncates from the left when requested" do
       result = described_class.truncate(long, max_tokens: 5, model: "gpt-4o", overflow: :truncate_left)
       expect(described_class.count(result, model: "gpt-4o")).to be <= 5
+    end
+
+    it "accepts an enumerable stream of chunks for right truncation" do
+      chunks = long.scan(/.{1,37}/m)
+      stream_input = chunks
+
+      streamed = described_class.truncate(stream_input, max_tokens: 5, model: "gpt-4o")
+      direct = described_class.truncate(long, max_tokens: 5, model: "gpt-4o")
+
+      expect(streamed).to eq(direct)
+    end
+
+    it "returns the concatenated stream when an enumerable stays under the limit" do
+      stream_input = ["Hello", ", ", "world!"]
+
+      expect(described_class.truncate(stream_input, max_tokens: 100, model: "gpt-4o")).to eq("Hello, world!")
+    end
+
+    it "ignores nil and empty chunks in stream inputs" do
+      stream_input = ["Hello", nil, "", ", ", "world!"]
+
+      streamed = described_class.truncate(stream_input, max_tokens: 100, model: "gpt-4o")
+      direct = described_class.truncate("Hello, world!", max_tokens: 100, model: "gpt-4o")
+
+      expect(streamed).to eq(direct)
+    end
+
+    it "accepts an IO-like stream for left truncation" do
+      stream = StringIO.new(long)
+      stream_input = stream.each_line
+
+      streamed = described_class.truncate(stream_input, max_tokens: 5, model: "gpt-4o", overflow: :truncate_left)
+      direct = described_class.truncate(long, max_tokens: 5, model: "gpt-4o", overflow: :truncate_left)
+
+      expect(streamed).to eq(direct)
+    end
+
+    it "returns an empty string when max_tokens is zero" do
+      stream_input = long.each_line
+
+      expect(described_class.truncate(long, max_tokens: 0, model: "gpt-4o")).to eq("")
+      expect(described_class.truncate(stream_input, max_tokens: 0, model: "gpt-4o")).to eq("")
+    end
+
+    it "rejects negative max_tokens" do
+      expect { described_class.truncate(long, max_tokens: -1, model: "gpt-4o") }
+        .to raise_error(ArgumentError, /max_tokens must be >= 0/)
+    end
+
+    it "rejects non-integer max_tokens" do
+      invalid_max_tokens = 3.5
+
+      expect { described_class.truncate(long, max_tokens: invalid_max_tokens, model: "gpt-4o") }
+        .to raise_error(ArgumentError, /max_tokens must be an Integer/)
     end
 
     it "rejects unknown overflow strategies" do

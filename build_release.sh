@@ -1,6 +1,13 @@
 #!/bin/bash
 set -euo pipefail
 
+# Maintainer release helper.
+#
+# Usage:
+#   SKIP_PUSH=1 ./build_release.sh       # build and verify only
+#   ./build_release.sh                   # build, then let `gem push` prompt for MFA
+#   GEM_HOST_OTP=123456 ./build_release.sh  # build and publish with explicit OTP
+
 ROOT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$ROOT_DIR"
 

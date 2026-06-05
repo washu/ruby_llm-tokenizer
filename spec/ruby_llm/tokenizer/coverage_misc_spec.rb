@@ -29,6 +29,46 @@ RSpec.describe "edge cases" do
       stub_const("RubyLLM::Tokenizer::Backend::Marvin", Class.new(described_class))
       expect(RubyLLM::Tokenizer::Backend::Marvin.new.identifier).to eq("marvin")
     end
+
+    it "rejects non-integer max_tokens in #truncate" do
+      expect { base.truncate("x", max_tokens: 1.5) }
+        .to raise_error(ArgumentError, /max_tokens must be an Integer/)
+    end
+
+    it "rejects negative max_tokens in #truncate" do
+      expect { base.truncate("x", max_tokens: -1) }
+        .to raise_error(ArgumentError, /max_tokens must be >= 0/)
+    end
+
+    it "returns an empty string when max_tokens is zero" do
+      expect(base.truncate("anything", max_tokens: 0)).to eq("")
+    end
+
+    it "ignores nil and empty chunks before invoking encode" do
+      stub_backend = Class.new(described_class) do
+        attr_reader :seen
+
+        def initialize
+          super
+          @seen = []
+        end
+
+        def encode(text)
+          @seen << text
+          text.bytes
+        end
+
+        def decode(ids)
+          ids.pack("C*")
+        end
+      end
+
+      backend = stub_backend.new
+      result = backend.truncate([nil, "", "abc"], max_tokens: 10)
+
+      expect(result).to eq("abc")
+      expect(backend.seen).to eq(["abc"])
+    end
   end
 
   describe RubyLLM::Tokenizer::Backend::Tiktoken do

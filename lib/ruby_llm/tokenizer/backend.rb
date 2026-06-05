@@ -25,15 +25,15 @@ module RubyLLM
         end
 
         def truncate(text, max_tokens:, overflow: :truncate_right)
-          ids = encode(text)
-          return text.to_s if ids.size <= max_tokens
+          validate_max_tokens!(max_tokens)
+          validate_overflow!(overflow)
+          return "" if max_tokens.zero?
 
-          kept = case overflow
-                 when :truncate_right then ids.first(max_tokens)
-                 when :truncate_left  then ids.last(max_tokens)
-                 else raise ArgumentError, "Unknown overflow strategy: #{overflow.inspect}"
-                 end
-          decode(kept)
+          if text.respond_to?(:to_str) || !text.respond_to?(:each)
+            truncate_string(text.to_s, max_tokens: max_tokens, overflow: overflow)
+          else
+            truncate_stream(text, max_tokens: max_tokens, overflow: overflow)
+          end
         end
 
         def identifier
@@ -41,6 +41,71 @@ module RubyLLM
         end
 
         private
+
+        def truncate_string(text, max_tokens:, overflow:)
+          ids = encode(text)
+          return text if ids.size <= max_tokens
+
+          decode(kept_ids(ids, max_tokens: max_tokens, overflow: overflow))
+        end
+
+        def truncate_stream(stream, max_tokens:, overflow:)
+          if overflow == :truncate_right
+            truncate_stream_right(stream, max_tokens)
+          else
+            truncate_stream_left(stream, max_tokens)
+          end
+        end
+
+        def truncate_stream_right(stream, max_tokens)
+          buffer = +""
+
+          each_chunk(stream) do |chunk|
+            buffer << chunk
+            ids = encode(buffer)
+            return decode(kept_ids(ids, max_tokens: max_tokens, overflow: :truncate_right)) if ids.size > max_tokens
+          end
+
+          buffer
+        end
+
+        def truncate_stream_left(stream, max_tokens)
+          buffer = +""
+
+          each_chunk(stream) do |chunk|
+            buffer << chunk
+            ids = encode(buffer)
+            buffer = decode(kept_ids(ids, max_tokens: max_tokens, overflow: :truncate_left)) if ids.size > max_tokens
+          end
+
+          buffer
+        end
+
+        def kept_ids(ids, max_tokens:, overflow:)
+          overflow == :truncate_right ? ids.first(max_tokens) : ids.last(max_tokens)
+        end
+
+        def each_chunk(stream)
+          stream.each do |chunk|
+            next if chunk.nil?
+
+            piece = chunk.to_s
+            next if piece.empty?
+
+            yield piece
+          end
+        end
+
+        def validate_max_tokens!(max_tokens)
+          raise ArgumentError, "max_tokens must be an Integer" unless max_tokens.is_a?(Integer)
+          raise ArgumentError, "max_tokens must be >= 0" if max_tokens.negative?
+        end
+
+        def validate_overflow!(overflow)
+          return if %i[truncate_right truncate_left].include?(overflow)
+
+          raise ArgumentError, "Unknown overflow strategy: #{overflow.inspect}"
+        end
 
         def decode_single(id)
           decode([id])
