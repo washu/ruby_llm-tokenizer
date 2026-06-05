@@ -1,13 +1,31 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
-# Extract version from version.rb
-VERSION=$(ruby -r ./lib/ruby_llm/tokenizerversion.rb -e "puts RubyLLM::Tokenizer::VERSION")
+ROOT_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$ROOT_DIR"
+
+VERSION="$(ruby -r ./lib/ruby_llm/tokenizer/version.rb -e 'puts RubyLLM::Tokenizer::VERSION')"
+GEM_FILE="ruby_llm-tokenizer-${VERSION}.gem"
 
 echo "Building gem version ${VERSION}..."
+rm -f "$GEM_FILE"
 gem build ruby_llm-tokenizer.gemspec
 
-echo "Pushing to RubyGems..."
-gem push ruby_llm-tokenizer-${VERSION}.gem
+if [[ ! -f "$GEM_FILE" ]]; then
+  echo "Expected gem file not found: $GEM_FILE" >&2
+  exit 1
+fi
+
+if [[ "${SKIP_PUSH:-0}" == "1" ]]; then
+  echo "SKIP_PUSH=1 set; build verified, skipping publish."
+  exit 0
+fi
+
+echo "Pushing $GEM_FILE to RubyGems..."
+if [[ -n "${GEM_HOST_OTP:-}" ]]; then
+  gem push "$GEM_FILE" --otp "$GEM_HOST_OTP"
+else
+  gem push "$GEM_FILE"
+fi
 
 echo "Done!"
