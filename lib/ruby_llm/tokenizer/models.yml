@@ -1,0 +1,43 @@
+# Built-in model -> backend mapping. First match wins.
+# Users can override or extend via RubyLLM::Tokenizer.register(...).
+#
+# `match` is either a literal string (exact match) or `/regex/flags` (parsed
+# as a Regexp). Supported flags: i, m, x.
+
+# --- OpenAI: delegated to tiktoken_ruby's built-in model->encoding table ------
+# This covers every OpenAI model identifier tiktoken_ruby knows about:
+#   - GPT family: gpt-3.5, gpt-4, gpt-4o, gpt-4.1, gpt-4.5, gpt-5, gpt-oss-*,
+#                 chatgpt-4o, Azure-style gpt-35-turbo
+#   - o-series: o1, o3, o4-mini (and `-*` suffixed variants)
+#   - Embeddings: text-embedding-ada-002, text-embedding-3-{small,large}
+#   - Legacy completions: text-davinci-*, davinci/curie/babbage/ada, code-*,
+#                         davinci-002, babbage-002
+#   - Fine-tunes: ft:gpt-*, ft:davinci-002, ft:babbage-002
+#   - Codex: codex-mini, code-cushman-*, davinci-codex
+#
+# New OpenAI models become available on `bundle update tiktoken_ruby` — no PR
+# to this file required. Override a specific model at runtime with
+# RubyLLM::Tokenizer.register(...).
+
+- match: "/^(gpt-|gpt[0-9]|chatgpt-|o[1-9]|text-|code-|davinci\\b|curie\\b|babbage\\b|ada\\b|ft:|codex-)/"
+  backend: tiktoken_auto
+
+# --- Open weights: Hugging Face backend (tokenizer.json fetched lazily) -------
+# Some repos below are gated and require HF_TOKEN. Override with
+# RubyLLM::Tokenizer.register(...) if you want a different mirror.
+
+- match: "/^(llama-?3|meta-llama)/i"
+  backend: hugging_face
+  repo: meta-llama/Meta-Llama-3-8B-Instruct
+
+- match: "/^(mistral|mixtral)/i"
+  backend: hugging_face
+  repo: mistralai/Mistral-7B-Instruct-v0.2
+
+- match: "/^deepseek/i"
+  backend: hugging_face
+  repo: deepseek-ai/DeepSeek-V2
+
+- match: "/^qwen/i"
+  backend: hugging_face
+  repo: Qwen/Qwen2.5-7B-Instruct

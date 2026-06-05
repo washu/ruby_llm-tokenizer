@@ -1,0 +1,48 @@
+module RubyLLM
+  module Tokenizer
+    VERSION: String
+
+    class Error < StandardError
+    end
+
+    class UnknownModelError < Error
+    end
+
+    class BackendError < Error
+    end
+
+    class CacheError < Error
+    end
+
+    class ContextExceededError < Error
+      attr_reader token_count: Integer?
+      attr_reader limit: Integer?
+      attr_reader model: String?
+    end
+
+    class Configuration
+      attr_accessor cache_dir: Pathname
+      attr_accessor offline: bool
+      attr_accessor hf_token: String?
+      attr_accessor approximate_warn: bool
+    end
+
+    class Analysis
+      attr_reader tokens: Array[String]
+      attr_reader ids: Array[Integer]
+      attr_reader model: String
+      def count: () -> Integer
+      def to_h: () -> Hash[Symbol, untyped]
+    end
+
+    def self.count: (String text, model: String) -> Integer
+    def self.analyze: (String text, model: String) -> Analysis
+    def self.truncate: (String text, max_tokens: Integer, model: String, ?overflow: Symbol) -> String
+    def self.register: (match: Regexp | String, backend: Symbol, **untyped) -> Registry
+    def self.enable_claude_approximation!: (?encoding: String) -> Registry
+    def self.configure: () { (Configuration) -> void } -> void
+    def self.configuration: () -> Configuration
+    def self.registry: () -> Registry
+    def self.reset!: () -> void
+  end
+end

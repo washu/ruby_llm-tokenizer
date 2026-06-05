@@ -1,0 +1,21 @@
+AllCops:
+  TargetRubyVersion: 3.1
+  NewCops: enable
+  SuggestExtensions: false
+
+Style/StringLiterals:
+  EnforcedStyle: double_quotes
+
+Style/StringLiteralsInInterpolation:
+  EnforcedStyle: double_quotes
+
+# Class-level YARD comments add noise for a small, well-documented gem; the
+# README is the source of truth.
+Style/Documentation:
+  Enabled: false
+
+# RSpec describe blocks are naturally long.
+Metrics/BlockLength:
+  Exclude:
+    - "spec/**/*"
+    - "*.gemspec"
