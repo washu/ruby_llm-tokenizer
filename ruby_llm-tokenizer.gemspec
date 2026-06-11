@@ -10,11 +10,12 @@ Gem::Specification.new do |spec|
 
   spec.summary = "Local, model-aware token counting for ruby_llm."
   spec.description = <<~DESC
-    Pure-Ruby facade over Hugging Face `tokenizers` and OpenAI `tiktoken_ruby`
-    that maps ruby_llm model identifiers (gpt-4o, llama-3, mistral, ...) to the
-    correct tokenizer and exposes a small API for counting, analyzing, and
-    truncating text against a model's context window. Includes an opt-in
-    approximation backend for models with no published tokenizer (Claude).
+    Pure-Ruby facade over Hugging Face `tokenizers`, OpenAI `tiktoken_ruby`, and
+    SentencePiece bindings that maps ruby_llm model identifiers (gpt-4o,
+    llama-3, mistral, ...) to the correct tokenizer and exposes a small API for
+    counting, analyzing, and truncating text against a model's context window.
+    Includes an opt-in approximation backend for models with no published
+    tokenizer (Claude).
   DESC
   spec.homepage = "https://github.com/washu/ruby_llm-tokenizer"
   spec.license = "MIT"
@@ -24,6 +25,17 @@ Gem::Specification.new do |spec|
   spec.metadata["source_code_uri"] = "#{spec.homepage}/tree/main"
   spec.metadata["changelog_uri"] = "#{spec.homepage}/blob/main/CHANGELOG.md"
   spec.metadata["rubygems_mfa_required"] = "true"
+  spec.post_install_message = <<~MSG
+    ruby_llm-tokenizer includes a SentencePiece backend. If you use Gemini or any
+    other SentencePiece-based model, install the native SentencePiece library too:
+
+      macOS:       brew install sentencepiece
+      Ubuntu/Debian: sudo apt-get install sentencepiece libsentencepiece-dev
+
+    On Apple Silicon, direct gem installs may need:
+
+      gem install sentencepiece -- --with-opt-dir=/opt/homebrew
+  MSG
 
   gemspec = File.basename(__FILE__)
   spec.files = IO.popen(%w[git ls-files -z], chdir: __dir__, err: IO::NULL) do |ls|
@@ -39,4 +51,5 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency "tiktoken_ruby", "~> 0.0.9"
   spec.add_dependency "tokenizers", "~> 0.5"
+  spec.add_dependency "sentencepiece", "~> 0.2"
 end

@@ -3,7 +3,7 @@
 require "tmpdir"
 
 RSpec.describe RubyLLM::Tokenizer::Backend::HuggingFace do
-  let(:fixtures_root) { Pathname.new(File.expand_path("../../../fixtures", __dir__)) }
+  let(:fixtures_root) { Pathname.new(__dir__).join("../../../fixtures").cleanpath }
   let(:fake_tokenizer) { Tokenizers.from_file(fixtures_root.join("tiny-tokenizer", "tokenizer.json").to_s) }
 
   describe "offline mode (from_file)" do
@@ -81,6 +81,25 @@ RSpec.describe RubyLLM::Tokenizer::Backend::HuggingFace do
         .and_return(fake_tokenizer)
 
       RubyLLM::Tokenizer.count("hello", model: "online-model")
+    end
+
+    it "omits revision when none is configured" do
+      RubyLLM::Tokenizer.reset!
+      RubyLLM::Tokenizer.configure do |c|
+        c.offline = false
+        c.hf_token = nil
+      end
+      RubyLLM::Tokenizer.register(
+        match: "online-model-no-revision",
+        backend: :hugging_face,
+        repo: "fake-org/fake-repo"
+      )
+
+      expect(Tokenizers).to receive(:from_pretrained)
+        .with("fake-org/fake-repo")
+        .and_return(fake_tokenizer)
+
+      expect(RubyLLM::Tokenizer.count("hello", model: "online-model-no-revision")).to eq(1)
     end
 
     it "wraps unexpected errors in BackendError" do

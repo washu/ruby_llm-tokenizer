@@ -4,6 +4,7 @@ require "yaml"
 require_relative "errors"
 require_relative "backend/tiktoken"
 require_relative "backend/hugging_face"
+require_relative "backend/sentencepiece"
 require_relative "backend/approximate"
 
 module RubyLLM
@@ -107,6 +108,7 @@ module RubyLLM
         when :tiktoken      then Backend::Tiktoken.new(**entry.options)
         when :tiktoken_auto then build_tiktoken_auto(model)
         when :hugging_face  then Backend::HuggingFace.new(**entry.options)
+        when :sentencepiece then Backend::SentencePiece.new(**entry.options)
         when :approximate   then Backend::Approximate.new(**entry.options)
         else
           raise BackendError, "Unknown backend: #{entry.backend.inspect}"

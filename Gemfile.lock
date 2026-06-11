@@ -1,7 +1,8 @@
 PATH
   remote: .
   specs:
-    ruby_llm-tokenizer (0.1.0)
+    ruby_llm-tokenizer (0.1.1)
+      sentencepiece (~> 0.2)
       tiktoken_ruby (~> 0.0.9)
       tokenizers (~> 0.5)
 
@@ -60,6 +61,7 @@ GEM
       parser (>= 3.3.7.2)
       prism (~> 1.7)
     ruby-progressbar (1.13.0)
+    sentencepiece (0.2.1)
     simplecov (0.22.0)
       docile (~> 1.1)
       simplecov-html (~> 0.11)
@@ -67,9 +69,7 @@ GEM
     simplecov-html (0.13.2)
     simplecov_json_formatter (0.1.4)
     tiktoken_ruby (0.0.16-arm64-darwin)
-    tiktoken_ruby (0.0.16-x86_64-linux)
     tokenizers (0.7.0-arm64-darwin)
-    tokenizers (0.7.0-x86_64-linux)
     unicode-display_width (3.2.0)
       unicode-emoji (~> 4.1)
     unicode-emoji (4.2.0)
@@ -81,7 +81,6 @@ GEM
 PLATFORMS
   arm64-darwin-22
   arm64-darwin-23
-  x86_64-linux
 
 DEPENDENCIES
   rake (~> 13.0)

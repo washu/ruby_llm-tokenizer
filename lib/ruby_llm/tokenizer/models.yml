@@ -22,6 +22,15 @@
 - match: "/^(gpt-|gpt[0-9]|chatgpt-|o[1-9]|text-|code-|davinci\\b|curie\\b|babbage\\b|ada\\b|ft:|codex-)/"
   backend: tiktoken_auto
 
+# --- Google Gemini: SentencePiece backend ------------------------------------
+# Gemini models use SentencePiece tokenization. Set GEMINI_TOKENIZER_MODEL_FILE
+# to point at the local tokenizer.model you want to use, or override the match
+# at runtime with RubyLLM::Tokenizer.register(...).
+
+- match: "/^gemini/i"
+  backend: sentencepiece
+  model_file_env: GEMINI_TOKENIZER_MODEL_FILE
+
 # --- Open weights: Hugging Face backend (tokenizer.json fetched lazily) -------
 # Some repos below are gated and require HF_TOKEN. Override with
 # RubyLLM::Tokenizer.register(...) if you want a different mirror.

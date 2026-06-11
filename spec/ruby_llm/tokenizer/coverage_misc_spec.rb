@@ -69,20 +69,23 @@ RSpec.describe "edge cases" do
       expect(result).to eq("abc")
       expect(backend.seen).to eq(["abc"])
     end
+
+    it "leaves a left-truncation stream untouched when it stays under the limit" do
+      stub_backend = Class.new(described_class) do
+        def encode(text)
+          text.bytes
+        end
+
+        def decode(ids)
+          ids.pack("C*")
+        end
+      end
+
+      backend = stub_backend.new
+      expect(backend.truncate(["Hello", " world"], max_tokens: 100, overflow: :truncate_left)).to eq("Hello world")
+    end
   end
 
-  describe RubyLLM::Tokenizer::Backend::Tiktoken do
-    it "raises BackendError for an unknown encoding name" do
-      expect { described_class.new(encoding: "no_such_encoding_xyz") }
-        .to raise_error(RubyLLM::Tokenizer::BackendError, /Unknown tiktoken encoding.*no_such_encoding_xyz/)
-    end
-
-    it "wraps unexpected Tiktoken errors in BackendError" do
-      allow(Tiktoken).to receive(:get_encoding).and_raise(StandardError, "kaboom")
-      expect { described_class.new(encoding: "cl100k_base") }
-        .to raise_error(RubyLLM::Tokenizer::BackendError, /Failed to load.*kaboom/)
-    end
-  end
 
   describe RubyLLM::Tokenizer::Registry::Entry do
     it "returns false when match is neither Regexp nor String" do

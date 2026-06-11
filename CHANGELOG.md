@@ -1,5 +1,11 @@
 ## [Unreleased]
 
+## [0.1.1] - 2026-06-11
+
+- Bumped the gem version.
+- Added a post-install notice explaining that SentencePiece-backed models require
+  the native SentencePiece library and how to install it on macOS and Debian/Ubuntu.
+
 ## [0.1.0] - 2026-06-05
 
 - Initial release.

@@ -39,6 +39,7 @@
     <orderEntry type="library" scope="PROVIDED" name="rubocop (v1.87.0, rbenv: 3.4.9) [gem]" level="application" />
     <orderEntry type="library" scope="PROVIDED" name="rubocop-ast (v1.49.1, rbenv: 3.4.9) [gem]" level="application" />
     <orderEntry type="library" scope="PROVIDED" name="ruby-progressbar (v1.13.0, rbenv: 3.4.9) [gem]" level="application" />
+    <orderEntry type="library" scope="PROVIDED" name="sentencepiece (v0.2.1, rbenv: 3.4.9) [gem]" level="application" />
     <orderEntry type="library" scope="PROVIDED" name="simplecov (v0.22.0, rbenv: 3.4.9) [gem]" level="application" />
     <orderEntry type="library" scope="PROVIDED" name="simplecov-html (v0.13.2, rbenv: 3.4.9) [gem]" level="application" />
     <orderEntry type="library" scope="PROVIDED" name="simplecov_json_formatter (v0.1.4, rbenv: 3.4.9) [gem]" level="application" />
