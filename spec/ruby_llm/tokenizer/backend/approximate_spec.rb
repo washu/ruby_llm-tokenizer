@@ -33,4 +33,3 @@ RSpec.describe RubyLLM::Tokenizer::Backend::Approximate do
     expect(backend.count("hello world")).to be > 0
   end
 end
-

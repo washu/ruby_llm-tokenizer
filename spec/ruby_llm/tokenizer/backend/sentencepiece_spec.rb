@@ -4,7 +4,9 @@ RSpec.describe RubyLLM::Tokenizer::Backend::SentencePiece do
   let(:fixtures_root) { Pathname.new(__dir__).parent.parent.parent.join("fixtures") }
   # Upstream fixture from google/sentencepiece: data/test_oss_model.model
   let(:model_file) { fixtures_root.join("sentencepiece", "test_oss_model.model").to_s }
-  let(:bundled_model_file) { File.expand_path("../../../../lib/ruby_llm/tokenizer/data/gemini_tokenizer.model", __dir__) }
+  let(:bundled_model_file) do
+    File.expand_path("../../../../lib/ruby_llm/tokenizer/data/gemini_tokenizer.model", __dir__)
+  end
 
   def sentencepiece_available?
     require "sentencepiece"
@@ -111,4 +113,3 @@ RSpec.describe RubyLLM::Tokenizer::Backend::SentencePiece do
       .to raise_error(RubyLLM::Tokenizer::BackendError, /SentencePieceProcessor to be available/i)
   end
 end
-

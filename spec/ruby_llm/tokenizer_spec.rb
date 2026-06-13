@@ -4,7 +4,9 @@ require "stringio"
 
 RSpec.describe RubyLLM::Tokenizer do
   let(:gemini_model_file) { "/tmp/gemini-tokenizer.model" }
-  let(:bundled_gemini_model_file) { File.expand_path("../../lib/ruby_llm/tokenizer/data/gemini_tokenizer.model", __dir__) }
+  let(:bundled_gemini_model_file) do
+    File.expand_path("../../lib/ruby_llm/tokenizer/data/gemini_tokenizer.model", __dir__)
+  end
 
   it "has a version number" do
     expect(RubyLLM::Tokenizer::VERSION).to eq("0.1.2")

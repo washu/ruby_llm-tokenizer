@@ -86,7 +86,6 @@ RSpec.describe "edge cases" do
     end
   end
 
-
   describe RubyLLM::Tokenizer::Registry::Entry do
     it "returns false when match is neither Regexp nor String" do
       entry = described_class.new(match: 42, backend: :tiktoken, options: {})

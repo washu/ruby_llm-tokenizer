@@ -10,5 +10,3 @@ RSpec.describe "ruby_llm-tokenizer.gemspec" do
     expect(spec.post_install_message).to include("libsentencepiece-dev")
   end
 end
-
-

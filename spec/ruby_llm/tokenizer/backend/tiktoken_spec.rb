@@ -20,4 +20,3 @@ RSpec.describe RubyLLM::Tokenizer::Backend::Tiktoken do
     expect(backend.decode(backend.encode("hello world"))).to eq("hello world")
   end
 end
-

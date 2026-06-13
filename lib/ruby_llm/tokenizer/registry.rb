@@ -105,11 +105,11 @@ module RubyLLM
 
       def build_backend(entry, model)
         case entry.backend
-        when :tiktoken      then Backend::Tiktoken.new(**entry.options)
+        when :tiktoken then Backend::Tiktoken.new(**entry.options)
         when :tiktoken_auto then build_tiktoken_auto(model)
-        when :hugging_face  then Backend::HuggingFace.new(**entry.options)
-        when :sentencepiece then Backend::SentencePiece.new(**entry.options, default_model_file: File.expand_path("data/gemini_tokenizer.model", __dir__))
-        when :approximate   then Backend::Approximate.new(**entry.options)
+        when :hugging_face then Backend::HuggingFace.new(**entry.options)
+        when :sentencepiece then ::RubyLLM::Tokenizer.build_sentencepiece_backend(entry)
+        when :approximate then Backend::Approximate.new(**entry.options)
         else
           raise BackendError, "Unknown backend: #{entry.backend.inspect}"
         end
@@ -126,6 +126,16 @@ module RubyLLM
 
         Backend::Tiktoken.new(encoding: enc.name)
       end
+    end
+
+    def self.build_sentencepiece_backend(entry)
+      Backend::SentencePiece.new(
+        **entry.options,
+        default_model_file: File.expand_path(
+          "data/gemini_tokenizer.model",
+          __dir__
+        )
+      )
     end
   end
 end

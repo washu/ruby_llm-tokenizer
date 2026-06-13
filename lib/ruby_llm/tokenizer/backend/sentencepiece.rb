@@ -18,17 +18,17 @@ module RubyLLM
         end
 
         def encode(text)
-          @tokenizer.public_send(:encode_as_ids, text.to_s)
+          @tokenizer.encode_as_ids(text.to_s)
         end
 
         def decode(ids)
-          @tokenizer.public_send(:decode, Array(ids))
+          @tokenizer.decode(Array(ids))
         end
 
         def analyze(text)
           text = text.to_s
-          ids = @tokenizer.public_send(:encode_as_ids, text)
-          tokens = @tokenizer.public_send(:encode, text, out_type: "str")
+          ids = @tokenizer.encode_as_ids(text)
+          tokens = @tokenizer.encode(text, out_type: "str")
           Analysis.new(tokens: tokens, ids: ids, model: identifier)
         end
 
@@ -39,35 +39,61 @@ module RubyLLM
         private
 
         def resolve_model_file(model_file, model_file_env, default_model_file)
-          return model_file.to_s unless model_file.nil? || model_file.to_s.empty?
+          explicit_model_file(model_file) || env_model_file(model_file_env) || default_model_file(default_model_file) ||
+            raise_missing_model_file
+        end
 
-          if model_file_env && !model_file_env.to_s.empty?
-            env_value = ENV.fetch(model_file_env.to_s, nil)
-            return env_value.to_s unless env_value.nil? || env_value.to_s.empty?
-          end
+        def explicit_model_file(model_file)
+          return if model_file.nil? || model_file.to_s.empty?
 
-          return default_model_file.to_s unless default_model_file.nil? || default_model_file.to_s.empty?
+          model_file.to_s
+        end
 
+        def env_model_file(model_file_env)
+          return if model_file_env.nil? || model_file_env.to_s.empty?
+
+          env_value = ENV.fetch(model_file_env.to_s, nil)
+          return if env_value.nil? || env_value.to_s.empty?
+
+          env_value.to_s
+        end
+
+        def default_model_file(default_model_file)
+          return if default_model_file.nil? || default_model_file.to_s.empty?
+
+          default_model_file.to_s
+        end
+
+        def raise_missing_model_file
           raise BackendError,
-                "SentencePiece backend requires :model_file, :model_file_env, or :default_model_file with a configured path"
+                "SentencePiece backend requires :model_file, :model_file_env, or " \
+                ":default_model_file with a configured path"
         end
 
         def load_sentencepiece_processor_class
+          sentencepiece_processor_class || load_sentencepiece_gem
+        end
+
+        def sentencepiece_processor_class
           Object.const_get(:SentencePiece).const_get(:SentencePieceProcessor)
         rescue NameError
-          begin
-            require "sentencepiece"
-            Object.const_get(:SentencePiece).const_get(:SentencePieceProcessor)
-          rescue LoadError => e
-            raise BackendError,
-                  "SentencePiece backend requires the sentencepiece gem and a compiled SentencePiece library: #{e.message}"
-          rescue NameError => e
-            raise BackendError,
-                  "SentencePiece backend requires SentencePieceProcessor to be available: #{e.message}"
-          end
+          nil
+        end
+
+        def load_sentencepiece_gem
+          require "sentencepiece"
+          sentencepiece_processor_class || raise_missing_processor_constant
+        rescue LoadError => e
+          raise BackendError,
+                "SentencePiece backend requires the sentencepiece gem and a " \
+                "compiled SentencePiece library: #{e.message}"
+        end
+
+        def raise_missing_processor_constant
+          raise BackendError,
+                "SentencePiece backend requires SentencePieceProcessor to be available"
         end
       end
     end
   end
 end
-
