@@ -4,7 +4,7 @@
 [![Gem Version](https://badge.fury.io/rb/ruby_llm-tokenizer.svg)](https://rubygems.org/gems/ruby_llm-tokenizer)
 
 Local, model-aware token counting for [ruby_llm](https://github.com/crmne/ruby_llm).
-A facade over Hugging Face [`tokenizers`](https://github.com/ankane/tokenizers-ruby), OpenAI [`tiktoken_ruby`](https://github.com/IAPark/tiktoken_ruby), and SentencePiece bindings that maps model identifiers (`gpt-4o`, `llama-3`, `mistral`, ...) to the correct tokenizer and exposes a small API for counting, analyzing, and truncating text against a model's context window — without making an LLM API call.
+A facade over Hugging Face [`tokenizers`](https://github.com/ankane/tokenizers-ruby), OpenAI [`tiktoken_ruby`](https://github.com/IAPark/tiktoken_ruby), and SentencePiece bindings that maps model identifiers (`gpt-4o`, `llama-3`, `mistral`, ...) to the right tokenizer for counting, analyzing, and truncating text locally.
 No Rust toolchain required: cross-compiled binaries are inherited from the upstream gems.
 
 ## Installation
@@ -65,7 +65,7 @@ implementation may still retain the kept portion in memory.
 | Family                                                    | Backend         | Encoding / Repo                          |
 |-----------------------------------------------------------|-----------------|------------------------------------------|
 | All OpenAI families (gpt-3.5/4/4o/4.1/4.5/5, o-series, gpt-oss, embeddings, ft:, legacy) | `tiktoken_auto` | resolved via `Tiktoken.encoding_for_model` |
-| `gemini`                                                  | `sentencepiece` | `GEMINI_TOKENIZER_MODEL_FILE`            |
+| `gemini`                                                  | `sentencepiece` | bundled `.model`, override with `GEMINI_TOKENIZER_MODEL_FILE` |
 | `llama-3` / `meta-llama`                                  | `hugging_face`  | `meta-llama/Meta-Llama-3-8B-Instruct`    |
 | `mistral` / `mixtral`                                     | `hugging_face`  | `mistralai/Mistral-7B-Instruct-v0.2`     |
 | `deepseek`                                                | `hugging_face`  | `deepseek-ai/DeepSeek-V2`                |
@@ -75,7 +75,7 @@ OpenAI model resolution is delegated to `tiktoken_ruby` — new OpenAI models be
 
 OpenAI encodings are bundled with `tiktoken_ruby` (no network needed). Hugging Face `tokenizer.json` files are downloaded lazily on first use, then persisted under `cache_dir` for later offline reuse. Some HF repos (Llama 3, recent Mistral) are gated and require an HF token — see [Configuration](#configuration).
 
-If a model ships a SentencePiece `.model` file instead of `tokenizer.json`, you can register it with the `sentencepiece` backend:
+If a model ships a SentencePiece `.model` file instead of `tokenizer.json`, register it with the `sentencepiece` backend:
 
 ```ruby
 RubyLLM::Tokenizer.register(
@@ -85,7 +85,7 @@ RubyLLM::Tokenizer.register(
 )
 ```
 
-This backend uses the [`sentencepiece.rb`](https://github.com/yoshoku/sentencepiece.rb) gem. If you want to use it in your app, add `sentencepiece` to your bundle and make sure the SentencePiece native library is installed on your system.
+This backend uses the [`sentencepiece.rb`](https://github.com/yoshoku/sentencepiece.rb) gem. Add `sentencepiece` to your bundle and install the native SentencePiece library on your system.
 
 Common install commands from the upstream project:
 
@@ -103,7 +103,7 @@ If you install the gem directly on Apple Silicon, upstream also notes that you m
 gem install sentencepiece -- --with-opt-dir=/opt/homebrew
 ```
 
-Gemini models are wired to this backend by default and read the tokenizer path from `GEMINI_TOKENIZER_MODEL_FILE`.
+Gemini uses the bundled `lib/ruby_llm/tokenizer/data/gemini_tokenizer.model` by default; set `GEMINI_TOKENIZER_MODEL_FILE` to override it.
 
 ## Claude / Anthropic
 

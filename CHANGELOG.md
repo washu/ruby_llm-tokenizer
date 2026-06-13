@@ -1,4 +1,9 @@
-## [Unreleased]
+## [0.1.2] - 2026-06-13
+
+- Bundled a default SentencePiece model for Gemini so it works out of the box,
+  while still allowing `GEMINI_TOKENIZER_MODEL_FILE` overrides.
+- Tightened the README wording around SentencePiece and Gemini usage.
+- Updated the gem version to prepare for the next RubyGems release.
 
 ## [0.1.1] - 2026-06-11
 
@@ -26,5 +31,14 @@
   `HF_TOKEN` for Hugging Face gated repository access.
 - Hugging Face tokenizers fetched from the Hub are persisted under `cache_dir` for
   later offline reuse.
+
+## [Unreleased]
+
+## [Unreleased]
+
+- Bundled a default SentencePiece model for Gemini so it works out of the box,
+  while still allowing `GEMINI_TOKENIZER_MODEL_FILE` overrides.
+- Tightened the README wording around SentencePiece and Gemini usage.
+- Updated the gem version to prepare for the next RubyGems release.
 
 

@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    ruby_llm-tokenizer (0.1.1)
+    ruby_llm-tokenizer (0.1.2)
       sentencepiece (~> 0.2)
       tiktoken_ruby (~> 0.0.9)
       tokenizers (~> 0.5)

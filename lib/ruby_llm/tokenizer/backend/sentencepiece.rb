@@ -8,9 +8,9 @@ module RubyLLM
       class SentencePiece < Base
         attr_reader :model_file
 
-        def initialize(model_file: nil, model_file_env: nil)
+        def initialize(model_file: nil, model_file_env: nil, default_model_file: nil)
           super()
-          @model_file = resolve_model_file(model_file, model_file_env)
+          @model_file = resolve_model_file(model_file, model_file_env, default_model_file)
           processor_class = load_sentencepiece_processor_class
           @tokenizer = processor_class.new(model_file: @model_file)
         rescue StandardError => e
@@ -38,7 +38,7 @@ module RubyLLM
 
         private
 
-        def resolve_model_file(model_file, model_file_env)
+        def resolve_model_file(model_file, model_file_env, default_model_file)
           return model_file.to_s unless model_file.nil? || model_file.to_s.empty?
 
           if model_file_env && !model_file_env.to_s.empty?
@@ -46,8 +46,10 @@ module RubyLLM
             return env_value.to_s unless env_value.nil? || env_value.to_s.empty?
           end
 
+          return default_model_file.to_s unless default_model_file.nil? || default_model_file.to_s.empty?
+
           raise BackendError,
-                "SentencePiece backend requires :model_file or :model_file_env with a configured path"
+                "SentencePiece backend requires :model_file, :model_file_env, or :default_model_file with a configured path"
         end
 
         def load_sentencepiece_processor_class

@@ -4,6 +4,7 @@ RSpec.describe RubyLLM::Tokenizer::Backend::SentencePiece do
   let(:fixtures_root) { Pathname.new(__dir__).parent.parent.parent.join("fixtures") }
   # Upstream fixture from google/sentencepiece: data/test_oss_model.model
   let(:model_file) { fixtures_root.join("sentencepiece", "test_oss_model.model").to_s }
+  let(:bundled_model_file) { File.expand_path("../../../../lib/ruby_llm/tokenizer/data/gemini_tokenizer.model", __dir__) }
 
   def sentencepiece_available?
     require "sentencepiece"
@@ -34,15 +35,49 @@ RSpec.describe RubyLLM::Tokenizer::Backend::SentencePiece do
   it "raises a helpful error when no model file is provided" do
     expect { described_class.new }.to raise_error(
       RubyLLM::Tokenizer::BackendError,
-      /requires :model_file or :model_file_env/
+      /requires :model_file, :model_file_env, or :default_model_file/
     )
   end
 
   it "raises a helpful error when model_file_env is set but the env var is missing" do
     expect { described_class.new(model_file_env: "SENTENCEPIECE_TEST_MODEL_FILE") }.to raise_error(
       RubyLLM::Tokenizer::BackendError,
-      /requires :model_file or :model_file_env/
+      /requires :model_file, :model_file_env, or :default_model_file/
     )
+  end
+
+  it "uses the bundled default model when no explicit file is given" do
+    backend = described_class.new(default_model_file: bundled_model_file)
+
+    expect(backend.identifier).to eq("sentencepiece:#{bundled_model_file}")
+    expect(backend.model_file).to eq(bundled_model_file)
+  end
+
+  it "prefers an explicit model_file over env and bundled defaults" do
+    ENV["SENTENCEPIECE_TEST_MODEL_FILE"] = model_file
+
+    backend = described_class.new(
+      model_file: bundled_model_file,
+      model_file_env: "SENTENCEPIECE_TEST_MODEL_FILE",
+      default_model_file: "ignored"
+    )
+
+    expect(backend.model_file).to eq(bundled_model_file)
+  ensure
+    ENV.delete("SENTENCEPIECE_TEST_MODEL_FILE")
+  end
+
+  it "prefers env provided model_file over the bundled default" do
+    ENV["SENTENCEPIECE_TEST_MODEL_FILE"] = model_file
+
+    backend = described_class.new(
+      model_file_env: "SENTENCEPIECE_TEST_MODEL_FILE",
+      default_model_file: bundled_model_file
+    )
+
+    expect(backend.model_file).to eq(model_file)
+  ensure
+    ENV.delete("SENTENCEPIECE_TEST_MODEL_FILE")
   end
 
   it "raises a helpful error when the sentencepiece library cannot be required" do

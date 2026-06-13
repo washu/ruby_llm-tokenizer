@@ -4,9 +4,10 @@ require "stringio"
 
 RSpec.describe RubyLLM::Tokenizer do
   let(:gemini_model_file) { "/tmp/gemini-tokenizer.model" }
+  let(:bundled_gemini_model_file) { File.expand_path("../../lib/ruby_llm/tokenizer/data/gemini_tokenizer.model", __dir__) }
 
   it "has a version number" do
-    expect(RubyLLM::Tokenizer::VERSION).to eq("0.1.1")
+    expect(RubyLLM::Tokenizer::VERSION).to eq("0.1.2")
   end
 
   describe ".count" do
@@ -73,7 +74,7 @@ RSpec.describe RubyLLM::Tokenizer do
         .to raise_error(RubyLLM::Tokenizer::UnknownModelError)
     end
 
-    it "routes Gemini models through the SentencePiece backend when the model file env var is set" do
+    it "routes Gemini models through the SentencePiece backend with the bundled default model" do
       sentencepiece = Module.new
 
       sentencepiece.const_set(
@@ -99,17 +100,16 @@ RSpec.describe RubyLLM::Tokenizer do
       )
 
       stub_const("SentencePiece", sentencepiece)
-      old_value = ENV["GEMINI_TOKENIZER_MODEL_FILE"]
       begin
-        ENV["GEMINI_TOKENIZER_MODEL_FILE"] = gemini_model_file
+        ENV.delete("GEMINI_TOKENIZER_MODEL_FILE")
 
         result = described_class.analyze("hello gemini", model: "gemini-2.0-flash")
 
-        expect(result.model).to eq("sentencepiece:#{gemini_model_file}")
+        expect(result.model).to eq("sentencepiece:#{bundled_gemini_model_file}")
         expect(result.ids).to eq([1, 2])
         expect(result.tokens).to eq(%w[▁hello ▁gemini])
       ensure
-        ENV["GEMINI_TOKENIZER_MODEL_FILE"] = old_value
+        ENV["GEMINI_TOKENIZER_MODEL_FILE"] = gemini_model_file
       end
     end
   end
